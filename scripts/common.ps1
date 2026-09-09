@@ -49,7 +49,7 @@ function Invoke-SettingsGit([string[]]$Arguments) {
     return $output
 }
 
-function Get-ManagedSkillNames { return @('visual-verification', 'subagent-management') }
+function Get-ManagedSkillNames { return @('visual-verification', 'subagent-management', 'project-management') }
 
 function Get-ValidatedSource([string]$SkillName = 'visual-verification') {
     if ($SkillName -notin (Get-ManagedSkillNames)) { throw 'Unknown managed Skill' }
@@ -71,6 +71,7 @@ function Get-ValidatedSource([string]$SkillName = 'visual-verification') {
         if ($body -match '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)') { throw "Possible secret in Skill file: $name" }
     }
     $required = @('SKILL.md')
+    if ($SkillName -eq 'project-management') { $required += 'references/operations.md' }
     if ($SkillName -eq 'visual-verification') {
         $required += @('agents/openai.yaml', 'scripts/common.ps1', 'scripts/screenshot.ps1', 'scripts/record.ps1', 'scripts/extract-frames.ps1', 'scripts/contact-sheet.ps1', 'scripts/record-av.ps1', 'scripts/inspect-media.ps1', 'scripts/waveform.ps1', 'scripts/evaluate-sync.ps1', 'scripts/analyze-speech.ps1', 'scripts/backends/whisperx_backend.py')
     }

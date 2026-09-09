@@ -1,7 +1,7 @@
 # codex-settings
 
 Personal Codex Skills and their controlled local installation. Manages only
-`skills/visual-verification` and `skills/subagent-management`; it does not import
+`skills/visual-verification`, `skills/subagent-management` and `skills/project-management`; it does not import
 the entire `.codex` directory.
 
 ## Subagent management
@@ -15,6 +15,26 @@ Main owns decomposition, bounded assignment, collection, conflict resolution and
 final acceptance. Assign independent questions once, pass minimal context, preserve
 shared work, and serialize overlapping writes or dependent evidence. Subagents do
 not spawn agents, widen scope or manage external state. Simple tasks stay with Main.
+
+## Asana-backed project management
+
+Invoke `$project-management` for substantive project work with an existing Asana
+boundary. `skills/project-management/SKILL.md` defines ownership, current-state
+maintenance and hygiene; `references/operations.md` defines twelve semantic operations
+from work-context lookup through follow-up and completion. These are instructions for
+using existing connector tools, not an API wrapper or additional service.
+
+Main alone decides and writes project state. Workers return implementation/research/
+verification evidence and never write Asana. Routine bookkeeping needs no per-write
+approval; explicit human priority, deadlines, exclusions and project boundaries are
+preserved. No credentials, account IDs, queues, schedulers or role changes are installed.
+
+The semantics were adapted from the existing local `asana-project-management` Skill
+and its operation contracts, with Main calling the connector directly instead of an
+Asana-writing coordinator. That separately installed legacy Skill is preserved. Select
+this `$project-management` workflow for this ownership contract; do not run both PM
+workflows for one milestone. If a session only exposes Asana to a coordinator, this
+Skill reports unavailable synchronization instead of bypassing role permissions.
 
 ## Source and initial audit (2026-09-09)
 
@@ -69,9 +89,9 @@ pwsh -NoProfile -File .\scripts\check.ps1
 ```
 
 `update.ps1` does not fetch, merge, push or install dependencies. Resolve a dirty
-checkout before running it. It adds the new Skill to an existing managed visual-only
+checkout before running it. It adds new Skills to an existing managed one- or two-Skill
 installation; an entirely new home still requires `install.ps1`. Existing v1 visual
-installation metadata remains compatible. `check.ps1` is read-only: it checks both Skills' file hashes,
+installation metadata remains compatible. `check.ps1` is read-only: it checks all three Skills' file hashes,
 prints installed source commit/repository and backup location, validates the current
 source, and checks that its commit and files match. Failure returns a nonzero exit;
 missing FFmpeg/FFprobe is reported separately as unavailable. A commit-only change
@@ -82,7 +102,7 @@ an already-running task may retain its previous loaded instructions.
 
 ## Safety and recovery
 
-- Only the two explicitly listed Skills are installed, as copies independent of the checkout. The
+- Only the three explicitly listed Skills are installed, as copies independent of the checkout. The
   `config.toml`, policies, other Skills, authentication, sessions and plugin cache
   are not copied or rewritten.
 - Before changing the installed Skill, require a clean committed repository,
@@ -92,8 +112,8 @@ an already-running task may retain its previous loaded instructions.
   secret detector.
 - Local installed changes stop an update. There is no force-overwrite option.
   Preserve/reconcile those edits explicitly before trying again.
-- Validate both sources and destinations before any installed changes. Stage and
-  hash-check both copies, record a per-Skill `.codex-settings.json`, recheck sources
+- Validate all sources and destinations before any installed changes. Stage and
+  hash-check all copies, record a per-Skill `.codex-settings.json`, recheck sources
   and destinations, then rename each old directory to a unique backup
   under `<CodexHome>/codex-settings/backup-*` and publish the stage. A per-home lock
   prevents concurrent runs of this installer. Caught publication failures restore
@@ -112,7 +132,7 @@ an already-running task may retain its previous loaded instructions.
 
 Secrets, PATs, API tokens, Codex config/auth files, captured media, caches and models
 do not belong in this repository. `.gitignore` excludes common sensitive/generated
-files; always review `git diff --cached` before committing. Asana management,
+files; always review `git diff --cached` before committing. New Asana infrastructure,
 broad policy reorganization, frameworks, schedulers, queues and lab redesign remain
 outside scope.
 
@@ -125,8 +145,8 @@ pwsh -NoProfile -File .\tests\test-installation.ps1
 Tests use isolated temporary Git repositories and Codex homes: fresh install,
 update/check, dirty and committed-invalid source preservation, ignored payload
 refusal, concurrent lock refusal, local modification refusal and explicit Junction
-migration, visual-only upgrade, preservation of the first Skill when the second
-Skill is invalid or locally edited, and rollback after an injected second-Skill
+migration, one-/two-Skill upgrades, preservation of earlier Skills when a later
+Skill is invalid or locally edited, and rollback after an injected second-/third-Skill
 publication failure. Fixtures are retained in TEMP for inspection. Actual image inspection
 remains required when claiming visual behavior; installation/hash checks alone do
 not establish capture, A/V or speech quality.
