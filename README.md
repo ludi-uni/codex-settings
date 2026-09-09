@@ -1,7 +1,20 @@
 # codex-settings
 
-Personal Codex Skills and their controlled local installation. Currently manages
-only `skills/visual-verification`; it does not import the entire `.codex` directory.
+Personal Codex Skills and their controlled local installation. Manages only
+`skills/visual-verification` and `skills/subagent-management`; it does not import
+the entire `.codex` directory.
+
+## Subagent management
+
+`skills/subagent-management/SKILL.md` is a self-contained Codex Skill: no runtime,
+scheduler, queue, model configuration or external project integration. Invoke it
+as `$subagent-management` or let Codex select it for suitable delegation work.
+It uses whichever collaboration tools and roles are available in the current session.
+
+Main owns decomposition, bounded assignment, collection, conflict resolution and
+final acceptance. Assign independent questions once, pass minimal context, preserve
+shared work, and serialize overlapping writes or dependent evidence. Subagents do
+not spawn agents, widen scope or manage external state. Simple tasks stay with Main.
 
 ## Source and initial audit (2026-09-09)
 
@@ -56,7 +69,9 @@ pwsh -NoProfile -File .\scripts\check.ps1
 ```
 
 `update.ps1` does not fetch, merge, push or install dependencies. Resolve a dirty
-checkout before running it. `check.ps1` is read-only: it checks installed file hashes,
+checkout before running it. It adds the new Skill to an existing managed visual-only
+installation; an entirely new home still requires `install.ps1`. Existing v1 visual
+installation metadata remains compatible. `check.ps1` is read-only: it checks both Skills' file hashes,
 prints installed source commit/repository and backup location, validates the current
 source, and checks that its commit and files match. Failure returns a nonzero exit;
 missing FFmpeg/FFprobe is reported separately as unavailable. A commit-only change
@@ -67,7 +82,7 @@ an already-running task may retain its previous loaded instructions.
 
 ## Safety and recovery
 
-- Only the named Skill is installed, as a copy independent of the checkout. The
+- Only the two explicitly listed Skills are installed, as copies independent of the checkout. The
   `config.toml`, policies, other Skills, authentication, sessions and plugin cache
   are not copied or rewritten.
 - Before changing the installed Skill, require a clean committed repository,
@@ -77,15 +92,17 @@ an already-running task may retain its previous loaded instructions.
   secret detector.
 - Local installed changes stop an update. There is no force-overwrite option.
   Preserve/reconcile those edits explicitly before trying again.
-- Stage and hash-check a complete copy, record `.codex-settings.json` inside it,
-  recheck source/destination, then rename the old directory to a unique backup
+- Validate both sources and destinations before any installed changes. Stage and
+  hash-check both copies, record a per-Skill `.codex-settings.json`, recheck sources
+  and destinations, then rename each old directory to a unique backup
   under `<CodexHome>/codex-settings/backup-*` and publish the stage. A per-home lock
   prevents concurrent runs of this installer. Caught publication failures restore
-  the old directory; backups and failed stages are retained without auto-deletion.
-- These two directory renames are not one crash-atomic transaction. A process or
-  machine crash between them can leave the Skill absent: stop other installers,
+  all switched Skills in reverse order; if restoration itself fails, report the
+  exact backup for manual recovery. Backups and failed stages are retained.
+- The directory renames are not one crash-atomic transaction. A process or
+  machine crash between them can leave a Skill absent or versions mixed: stop other installers,
   inspect `backup-*` / `stage-*` and move the exact backup back to
-  `<CodexHome>/skills/visual-verification` only when that path is absent. If a current
+  `<CodexHome>/skills/<skill-name>` only when that path is absent. If a current
   installation exists, preserve it separately before restoring. A migrated Junction
   backup still points to the lab, so restoration restores that link. Never recursively
   delete its target. Other programs must not edit the Skill during an update.
@@ -95,8 +112,9 @@ an already-running task may retain its previous loaded instructions.
 
 Secrets, PATs, API tokens, Codex config/auth files, captured media, caches and models
 do not belong in this repository. `.gitignore` excludes common sensitive/generated
-files; always review `git diff --cached` before committing. Asana/subagent Skills,
-broad policy reorganization and lab redesign are outside this initial scope.
+files; always review `git diff --cached` before committing. Asana management,
+broad policy reorganization, frameworks, schedulers, queues and lab redesign remain
+outside scope.
 
 ## Focused verification
 
@@ -107,6 +125,8 @@ pwsh -NoProfile -File .\tests\test-installation.ps1
 Tests use isolated temporary Git repositories and Codex homes: fresh install,
 update/check, dirty and committed-invalid source preservation, ignored payload
 refusal, concurrent lock refusal, local modification refusal and explicit Junction
-migration. Fixtures are retained in TEMP for inspection. Actual image inspection
+migration, visual-only upgrade, preservation of the first Skill when the second
+Skill is invalid or locally edited, and rollback after an injected second-Skill
+publication failure. Fixtures are retained in TEMP for inspection. Actual image inspection
 remains required when claiming visual behavior; installation/hash checks alone do
 not establish capture, A/V or speech quality.

@@ -18,6 +18,48 @@ function Run-Script([string]$Name, [bool]$Success, [string[]]$Extra = @()) {
 }
 Run-Script install $true
 Run-Script check $true
+if (-not (Test-Path "$target/skills/subagent-management/SKILL.md")) { throw 'New Skill was not installed' }
+$visualMarker = Join-Path $target 'skills/visual-verification/.codex-settings.json'
+$markerHash = (Get-FileHash $visualMarker).Hash
+$newEntry = Get-Content "$fixture/skills/subagent-management/SKILL.md" -Raw
+Set-Content "$fixture/skills/subagent-management/SKILL.md" 'invalid'
+Git-Fixture add .
+Git-Fixture -c user.name=Test -c user.email=test@example.invalid commit -m invalid-second-skill
+Run-Script update $false
+if ((Get-FileHash $visualMarker).Hash -ne $markerHash) { throw 'Invalid second Skill changed first Skill' }
+Set-Content "$fixture/skills/subagent-management/SKILL.md" $newEntry -NoNewline
+Git-Fixture add .
+Git-Fixture -c user.name=Test -c user.email=test@example.invalid commit -m restore-second-skill
+Run-Script update $true
+$markerHash = (Get-FileHash $visualMarker).Hash
+$installedNew = "$target/skills/subagent-management/SKILL.md"
+$installedEntry = Get-Content $installedNew -Raw
+Add-Content $installedNew 'local edit'
+Run-Script check $false
+Run-Script update $false
+if ((Get-FileHash $visualMarker).Hash -ne $markerHash) { throw 'Second Skill drift changed first Skill' }
+Set-Content $installedNew $installedEntry -NoNewline
+# Simulate a home deployed by the old single-Skill installer, preserving its v1 marker.
+[IO.Directory]::Move("$target/skills/subagent-management", "$run/saved-subagent")
+Run-Script update $true
+Run-Script check $true
+if (-not (Test-Path "$target/skills/subagent-management/SKILL.md")) { throw 'Legacy update did not add new Skill' }
+# Inject one publication failure after the first Skill has already been switched.
+. "$fixture/scripts/common.ps1"
+$beforeRollback = @{}
+foreach ($name in Get-ManagedSkillNames) { $beforeRollback[$name] = Get-SkillFiles "$target/skills/$name" }
+function Move-SettingsDirectory([string]$From, [string]$To) {
+    if ((Split-Path $From -Leaf) -like 'stage-subagent-management-*') { throw 'Injected second publication failure' }
+    [IO.Directory]::Move($From, $To)
+}
+$failedAsExpected = $false
+try { Install-Settings -CodexHome $target -Update } catch {
+    if ($_ -notmatch 'Injected second publication failure') { throw }
+    $failedAsExpected = $true
+}
+if (-not $failedAsExpected) { throw 'Publication fault was not exercised' }
+foreach ($name in Get-ManagedSkillNames) { Assert-SameFiles (Get-SkillFiles "$target/skills/$name") $beforeRollback[$name] }
+Run-Script check $true
 $installed = Join-Path $target 'skills/visual-verification/SKILL.md'
 $before = (Get-FileHash $installed).Hash
 $sourceEntry = Get-Content "$fixture/skills/visual-verification/SKILL.md" -Raw
@@ -56,4 +98,4 @@ Run-Script install $true @('-AdoptExisting')
 Run-Script check $true
 if ((Get-Item "$target/skills/visual-verification").LinkType) { throw 'Install still links to source' }
 if (-not (Test-Path "$fixture/skills/visual-verification/SKILL.md")) { throw 'Junction target lost' }
-Write-Output "PASS: install, check, update, dirty/committed-invalid source, ignored payload, lock, local drift, junction adoption. Evidence: $run"
+Write-Output "PASS: both Skills, legacy upgrade, cross-Skill preflight, publication rollback, dirty/invalid source, ignored payload, lock, local drift, junction adoption. Evidence: $run"
