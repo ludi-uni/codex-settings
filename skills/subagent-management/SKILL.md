@@ -49,6 +49,10 @@ with stable interfaces. Serialize dependencies, shared mutable state, overlappin
 edits and operations on the same external resource. Read-only work also waits if
 its evidence is being changed by another agent. Never race speculative fixes.
 
+For test/search commands, constrain discovery to the assigned checkout. A filename
+filter can also match nested worktrees or generated copies; exclude those unrelated
+roots so a bounded assignment does not execute duplicate or out-of-scope work.
+
 Pass a compact assignment, preferably with fresh or limited history when supported:
 
 ```text
