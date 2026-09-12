@@ -73,7 +73,7 @@ function Get-ValidatedSource([string]$SkillName = 'visual-verification') {
     $required = @('SKILL.md')
     if ($SkillName -eq 'project-management') { $required += 'references/operations.md' }
     if ($SkillName -eq 'visual-verification') {
-        $required += @('agents/openai.yaml', 'scripts/common.ps1', 'scripts/screenshot.ps1', 'scripts/record.ps1', 'scripts/extract-frames.ps1', 'scripts/contact-sheet.ps1', 'scripts/record-av.ps1', 'scripts/inspect-media.ps1', 'scripts/waveform.ps1', 'scripts/evaluate-sync.ps1', 'scripts/analyze-speech.ps1', 'scripts/backends/whisperx_backend.py')
+        $required += @('agents/openai.yaml', 'scripts/common.ps1', 'scripts/screenshot.ps1', 'scripts/record.ps1', 'scripts/extract-frames.ps1', 'scripts/contact-sheet.ps1', 'scripts/record-av.ps1', 'scripts/inspect-media.ps1', 'scripts/waveform.ps1', 'scripts/evaluate-sync.ps1', 'scripts/analyze-speech.ps1', 'scripts/backends/whisperx_backend.py', 'scripts/desktop-discover.ps1', 'scripts/desktop-inspect.ps1', 'scripts/desktop-record.ps1', 'scripts/desktop-screenshot.ps1', 'scripts/winapp-common.ps1')
     }
     foreach ($name in $required) {
         if (-not $files.Contains($name)) { throw "Required Skill file missing: $name" }
@@ -114,6 +114,23 @@ function Install-Settings([string]$CodexHome, [switch]$AdoptExisting, [switch]$U
     New-Item -ItemType Directory -Path $storage -Force | Out-Null
     $lock = [IO.FileStream]::new((Join-Path $storage 'install.lock'), [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None, 1, [IO.FileOptions]::DeleteOnClose)
     try {
+        $legacyManifest = Join-Path $skills '.agent-verification-lab-visual-verification.manifest.json'
+        $legacyManifestBackup = $null
+        $legacyManifestMoved = $false
+        if (Test-Path -LiteralPath $legacyManifest) {
+            Assert-PlainAncestors $legacyManifest
+            $legacyItem = Get-Item -LiteralPath $legacyManifest -Force
+            if ($legacyItem.PSIsContainer -or ($legacyItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Legacy visual-verification manifest must be a plain file' }
+            try {
+                $legacyState = Get-Content -LiteralPath $legacyManifest -Raw | ConvertFrom-Json
+                $legacyDestination = [IO.Path]::GetFullPath([string]$legacyState.destination)
+            } catch { throw 'Legacy visual-verification manifest is invalid' }
+            $expectedDestination = [IO.Path]::GetFullPath((Join-Path $skills 'visual-verification'))
+            if ($legacyState.schema -ne 'agent-verification-lab.skill-install.v1' -or $legacyState.owner -ne 'agent-verification-lab' -or $legacyState.skill -ne 'visual-verification' -or $legacyState.mode -ne 'Junction' -or $legacyDestination -ne $expectedDestination) {
+                throw 'Unrecognized legacy visual-verification manifest; refusing to move it'
+            }
+            $legacyManifestBackup = Join-Path $storage ("legacy-manifest-visual-verification-$([guid]::NewGuid().ToString('N')).json")
+        }
         $plans = @()
         $managedCount = 0
         # Validate every destination before staging or changing any installed Skill.
@@ -174,6 +191,10 @@ function Install-Settings([string]$CodexHome, [switch]$AdoptExisting, [switch]$U
         New-Item -ItemType Directory -Path $skills -Force | Out-Null
         # Same-volume directory renames; never traverse a junction target.
         try {
+            if ($legacyManifestBackup) {
+                [IO.File]::Move($legacyManifest, $legacyManifestBackup)
+                $legacyManifestMoved = $true
+            }
             foreach ($plan in $plans) {
                 if ($plan.Exists) { Move-SettingsDirectory $plan.Destination $plan.Backup; $plan.MovedOld = $true }
                 Move-SettingsDirectory $plan.Stage $plan.Destination; $plan.MovedNew = $true
@@ -189,6 +210,10 @@ function Install-Settings([string]$CodexHome, [switch]$AdoptExisting, [switch]$U
                     if ($plan.MovedOld) { Move-SettingsDirectory $plan.Backup $plan.Destination }
                 } catch { $recoveryErrors += "$($plan.Source.Name): $($_.Exception.Message); backup=$($plan.Backup)" }
             }
+            if ($legacyManifestMoved) {
+                try { [IO.File]::Move($legacyManifestBackup, $legacyManifest) }
+                catch { $recoveryErrors += "legacy visual-verification manifest: $($_.Exception.Message); backup=$legacyManifestBackup" }
+            }
             if ($recoveryErrors.Count) { throw "Publication failed: $publishError. Manual recovery required: $($recoveryErrors -join '; ')" }
             throw $publishError
         }
@@ -198,6 +223,7 @@ function Install-Settings([string]$CodexHome, [switch]$AdoptExisting, [switch]$U
             Write-Output "DESTINATION=$($plan.Destination)"
             if ($plan.Exists) { Write-Output "BACKUP=$($plan.Backup)" }
         }
+        if ($legacyManifestMoved) { Write-Output "LEGACY_MANIFEST_BACKUP=$legacyManifestBackup" }
         Write-Output 'RESULT=INSTALLED'
     } finally { $lock.Dispose() }
 }

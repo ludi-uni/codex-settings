@@ -16,10 +16,22 @@ function Run-Script([string]$Name, [bool]$Success, [string[]]$Extra = @()) {
     $output = & pwsh -NoProfile -File "$fixture/scripts/$Name.ps1" -CodexHome $target @Extra 2>&1
     if (($LASTEXITCODE -eq 0) -ne $Success) { throw "Unexpected result from ${Name}: $output" }
 }
+New-Item -ItemType Directory "$target/skills" -Force | Out-Null
+$legacyManifest = Join-Path $target 'skills/.agent-verification-lab-visual-verification.manifest.json'
+[ordered]@{
+    schema = 'agent-verification-lab.skill-install.v1'; owner = 'agent-verification-lab'
+    skill = 'visual-verification'; mode = 'Junction'; source = 'C:\fixture\visual-verification'
+    destination = (Join-Path $target 'skills/visual-verification')
+} | ConvertTo-Json | Set-Content -LiteralPath $legacyManifest -Encoding utf8NoBOM
 Run-Script install $true
 Run-Script check $true
+if (Test-Path -LiteralPath $legacyManifest) { throw 'Legacy Junction manifest was not reconciled' }
+if (@(Get-ChildItem -LiteralPath "$target/codex-settings" -File -Filter 'legacy-manifest-visual-verification-*.json').Count -ne 1) { throw 'Legacy Junction manifest backup was not preserved' }
 if (-not (Test-Path "$target/skills/project-management/SKILL.md")) { throw 'Project Management Skill was not installed' }
 if (-not (Test-Path "$target/skills/subagent-management/SKILL.md")) { throw 'New Skill was not installed' }
+foreach ($name in @('desktop-discover.ps1', 'desktop-inspect.ps1', 'desktop-record.ps1', 'desktop-screenshot.ps1', 'winapp-common.ps1')) {
+    if (-not (Test-Path "$target/skills/visual-verification/scripts/$name")) { throw "WinApp desktop backend file was not installed: $name" }
+}
 $visualMarker = Join-Path $target 'skills/visual-verification/.codex-settings.json'
 $markerHash = (Get-FileHash $visualMarker).Hash
 $newEntry = Get-Content "$fixture/skills/subagent-management/SKILL.md" -Raw

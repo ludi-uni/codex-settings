@@ -51,6 +51,22 @@ Skill reports unavailable synchronization instead of bypassing role permissions.
 - The original repository is neither renamed, modified nor removed. This repository
   owns future published Skill snapshots; its updates do not flow back to the lab.
 
+## WinApp desktop backend resync (2026-09-12)
+
+- Accepted implementation source: `D:\0_my_folder\agent-verification-lab\skills\visual-verification`,
+  commit `b466f3152cc274f01fec63013b0baada0608e0c2`, Skill tree
+  `c646a05fbcb36759420c51b0423d22332163b499`.
+- `agent-verification-lab` remains the implementation source. This repository keeps
+  the existing vendored snapshot and remains the Codex installation/distribution owner;
+  `update.ps1` publishes an independent managed copy to the global Codex Skill directory.
+- The accepted 18-file snapshot adds the WinApp CLI `0.6.1` desktop discovery,
+  screenshot, record/frames and optional inspect adapters. The 12 pre-existing shared
+  payload files remain byte-identical; `SKILL.md` adds only the accepted desktop contract.
+- On the next install/update, a recognized legacy lab Junction manifest is moved to a
+  recoverable `codex-settings/legacy-manifest-visual-verification-*.json` backup. Current
+  installation state is owned by each Skill's `.codex-settings.json` marker and a normal
+  directory is the expected filesystem form after adoption by this repository.
+
 The Skill retains `%TEMP%\agent-verification-lab` evidence paths and existing JSON
 schema names for compatibility. Optional speech scripts retain the existing
 `C:\Users\leade\.cache\agent-verification-lab` defaults; on another machine pass
@@ -126,9 +142,12 @@ an already-running task may retain its previous loaded instructions.
   installation exists, preserve it separately before restoring. A migrated Junction
   backup still points to the lab, so restoration restores that link. Never recursively
   delete its target. Other programs must not edit the Skill during an update.
-- The old lab's `.agent-verification-lab-visual-verification.manifest.json` is retained
-  untouched as legacy metadata. The new installer uses only its own in-Skill marker.
-  Do not run both installers against the same Skill.
+- The old lab's `.agent-verification-lab-visual-verification.manifest.json` is accepted
+  only when its known schema, owner, Skill, Junction mode and destination match. The
+  installer moves it to a recoverable backup before publication and restores it if
+  publication rolls back; unknown content is preserved by refusing the operation. The
+  new installer uses only its own in-Skill marker. Do not run both installers against
+  the same Skill.
 
 Secrets, PATs, API tokens, Codex config/auth files, captured media, caches and models
 do not belong in this repository. `.gitignore` excludes common sensitive/generated
