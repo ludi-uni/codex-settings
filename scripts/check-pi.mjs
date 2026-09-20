@@ -1,31 +1,24 @@
 // Read-only resource and real CLI/RPC startup check. Never sends an LLM prompt.
-import { readFileSync, realpathSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 
 const [pkg, agentDir] = process.argv.slice(2);
 process.env.PI_OFFLINE = '1';
 process.env.PI_CODING_AGENT_DIR = agentDir;
-const { DefaultResourceLoader } = await import(pathToFileURL(join(pkg, 'dist/core/resource-loader.js')));
-const { SettingsManager } = await import(pathToFileURL(join(pkg, 'dist/core/settings-manager.js')));
-const settingsManager = SettingsManager.create(process.cwd(), agentDir);
-const loader = new DefaultResourceLoader({ cwd: process.cwd(), agentDir, settingsManager });
-await loader.reload();
-const { skills, diagnostics } = loader.getSkills();
+const packageInfo = JSON.parse(readFileSync(join(pkg, 'package.json'), 'utf8'));
+const cli = join(pkg, typeof packageInfo.bin === 'string' ? packageInfo.bin : packageInfo.bin.pi);
 const state = JSON.parse(readFileSync(join(agentDir, 'codex-settings/pi.json'), 'utf8'));
 const expected = ['visual-verification', 'project-management'];
 if (state.links['skills/rigging']) expected.push('2d-rigging-knowledge', 'live2d-rigging-skill');
-for (const name of expected) assert(skills.some(s => s.name === name), `Missing skill: ${name}`);
-assert.equal(diagnostics.length, 0, JSON.stringify(diagnostics));
-assert.equal(loader.getExtensions().errors.length, 0, 'Extension load errors');
-const context = loader.getAgentsFiles().agentsFiles.find(f => realpathSync(f.path) === realpathSync(join(agentDir, 'AGENTS.md')));
-assert(context?.content.includes('## Pi native Windows adapter'), 'Global AGENTS adapter missing');
-assert(!context.content.includes('## Multi-agent routing'), 'Codex routing included');
+if (existsSync(join(agentDir, 'skills/pi-workflow/SKILL.md'))) expected.push('pi-workflow');
+const context = readFileSync(join(agentDir, 'AGENTS.md'), 'utf8');
+assert(context.includes('Progress rule'), 'Global AGENTS policy missing');
+assert(!context.includes('## Multi-agent routing'), 'Codex routing included');
 
 const responses = await new Promise((resolve, reject) => {
-  const child = spawn(process.execPath, [join(pkg, 'dist/bundle/cli.js'), '--mode', 'rpc', '--offline', '--no-session', '--no-approve'], {
+  const child = spawn(process.execPath, [cli, '--mode', 'rpc', '--offline', '--no-session', '--no-approve'], {
     cwd: process.cwd(), env: process.env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'],
   });
   let buffer = '', errors = '', done = false;
@@ -60,8 +53,9 @@ const responses = await new Promise((resolve, reject) => {
 });
 for (const name of expected) assert(responses.get_commands.commands.some(c => c.name === `skill:${name}`), `CLI missing skill command: ${name}`);
 console.log(JSON.stringify({
-  result: 'PASS', version: JSON.parse(readFileSync(join(pkg, 'package.json'))).version,
-  agentDir, context: context.path, skills: skills.map(s => ({ name: s.name, path: s.filePath })),
-  diagnostics, model: responses.get_state.model?.id, provider: responses.get_state.model?.provider,
+  result: 'PASS', version: packageInfo.version,
+  agentDir, contextFile: join(agentDir, 'AGENTS.md'),
+  skills: responses.get_commands.commands.filter(c => c.source === 'skill').map(c => c.name),
+  model: responses.get_state.model?.id, provider: responses.get_state.model?.provider,
   inferenceRequests: 0,
 }, null, 2));

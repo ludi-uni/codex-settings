@@ -1,5 +1,9 @@
 # Compact pi harness — design proposal
 
+Superseded architecture note: the user chose official pi AGENTS/Skill/Extension
+loading instead of a custom SDK host. The current implementation is documented in
+`harness/README.md`; isolated SDK hosting and managed runtime updates are not used.
+
 Status: proposal, 2026-09-20. No active profile, provider, credentials or runtime was
 changed during this investigation. This document is a design, not evidence of
 improved task performance.

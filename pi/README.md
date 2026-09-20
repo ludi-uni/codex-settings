@@ -1,5 +1,10 @@
 # Native Windows pi foundation
 
+Current operation: use `scripts/migrate-pi-harness.ps1` and official `pi`.
+The compact instructions now live in the normal pi agent directory; see
+[current harness documentation](harness/README.md). The audit below records the
+earlier shared-foundation setup and is not a fixed version requirement.
+
 Verified against installed `@earendil-works/pi-coding-agent` **0.85.1**, Node
 24.19.0, PowerShell 7 and the Windows npm `pi.cmd`/`pi.ps1` launchers on 2026-09-17.
 The installed package's README, `docs/settings.md`, `docs/skills.md`, `docs/rpc.md`

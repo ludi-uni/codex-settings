@@ -1,9 +1,7 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param(
-    [string]$ProfileDir = (Join-Path $env:USERPROFILE '.pi/profiles/compact'),
-    [Parameter(ValueFromRemainingArguments = $true)][string[]]$PiArgs
-)
-$ErrorActionPreference = 'Stop'
-& node "$PSScriptRoot/pi-harness.mjs" --profile $ProfileDir @PiArgs
-if ($LASTEXITCODE -ne 0) { throw "pi harness exited with code $LASTEXITCODE" }
+param([Parameter(ValueFromRemainingArguments=$true)][string[]]$PiArgs)
+$ErrorActionPreference='Stop'
+# Convenience entry point; normal `pi` now launches the same official CLI.
+& node "$PSScriptRoot/pi-harness.mjs" @PiArgs
+if($LASTEXITCODE) { throw "pi exited with code $LASTEXITCODE" }
