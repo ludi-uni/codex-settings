@@ -132,7 +132,7 @@ to its process PATH. Its get_state/get_commands/switch_session use native pi RPC
 Do not launch another server on the existing port or replace the current service
 before comparing task outcomes. No web-service restart or promotion is automatic.
 
-Native package-management commands and extension-free helpers (`--no-extensions`)
+Native package-management commands, version/model listing, and extension-free helpers (`--no-extensions`)
 are forwarded to the absolute installed pi CLI with the baseline agent directory.
 This preserves pi-web's update/title-helper contract without recursively invoking
 the shim. Such explicit extension-free runs do not use the harness loop guard or

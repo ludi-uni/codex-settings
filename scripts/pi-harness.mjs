@@ -14,7 +14,8 @@ async function runNativeIfRequested(argv) {
   const profile = index < 0 ? join(homedir(), '.pi/profiles/compact') : args[index + 1];
   if (index >= 0) args.splice(index, 2);
   const management = ['install', 'remove', 'uninstall', 'update', 'list', 'config', 'auth'];
-  if (!management.includes(args[0]) && !args.includes('--no-extensions') && !args.includes('-ne')) return false;
+  const nativeInfo = args.some(arg => ['--version', '-v', '--list-models'].includes(arg));
+  if (!management.includes(args[0]) && !nativeInfo && !args.includes('--no-extensions') && !args.includes('-ne')) return false;
   const manifest = JSON.parse(readFileSync(join(profile, 'harness.json'), 'utf8'));
   if (manifest.schema !== 'codex-settings.pi-harness.v1') throw new Error('Invalid harness profile');
   process.exitCode = await new Promise((resolveExit, reject) => {

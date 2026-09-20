@@ -38,6 +38,7 @@ function run(args) {
   return r.stdout;
 }
 const inspection = JSON.parse(run(['--inspect']));
+assert.equal(run(['--version']).trim(), '0.85.1');
 const qualified = JSON.parse(run(['--inspect', '--model', 'offline-fixture/fixture:off']));
 assert.equal(qualified.model, 'offline-fixture/fixture');
 const toolLess = JSON.parse(run(['--inspect', '--no-tools', '--no-context-files', '--system-prompt', 'title helper']));
