@@ -1,5 +1,16 @@
 # codex-settings
 
+Native Windows **pi sharing** is now available alongside the existing Codex installer:
+run `.\scripts\install-pi.ps1`, then `.\scripts\check-pi.ps1`.
+See [pi setup and verification](pi/README.md), [shared ownership](shared/README.md),
+and [Codex compatibility](codex/README.md). Existing Codex paths remain unchanged.
+
+For the separately selectable **compact pi harness**, use
+`.\scripts\migrate-pi-harness.ps1` then `.\scripts\start-pi-harness.ps1`.
+See [migration, authentication, runtime and verification](pi/harness/README.md).
+`scripts/activate-pi-harness.ps1` selects it for the existing Windows pi-web startup
+after migration; it preserves the web token and session store and requires a restart.
+
 Personal Codex Skills and their controlled local installation. Manages only
 `skills/visual-verification`, `skills/subagent-management` and `skills/project-management`; it does not import
 the entire `.codex` directory.
