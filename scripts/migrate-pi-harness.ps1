@@ -41,11 +41,11 @@ function File-HashOrEmpty([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 function Get-PiPackageRoot {
-    $command = Get-Command pi.cmd -ErrorAction SilentlyContinue | Select-Object -First 1
-    if (-not $command) { throw 'PiPackageRoot was not supplied and pi.cmd was not found.' }
-    $candidate = Join-Path (Split-Path $command.Source -Parent) 'node_modules/@earendil-works/pi-coding-agent'
-    if (-not (Test-Path -LiteralPath $candidate -PathType Container)) { throw "Pi package not found beside pi.cmd: $candidate" }
-    return FullPath $candidate
+    foreach ($command in @(Get-Command pi.cmd -All -ErrorAction SilentlyContinue)) {
+        $candidate = Join-Path (Split-Path $command.Source -Parent) 'node_modules/@earendil-works/pi-coding-agent'
+        if (Test-Path -LiteralPath (Join-Path $candidate 'package.json') -PathType Leaf) { return FullPath $candidate }
+    }
+    throw 'Native pi package was not found on PATH; pass -PiPackageRoot explicitly.'
 }
 function Move-ToBackup([hashtable]$Entry, [string]$BackupRoot) {
     $Entry.Backup = Join-Path $BackupRoot $Entry.Relative

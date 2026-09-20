@@ -83,8 +83,24 @@ try {
     $failed = $false
     try { & $migration -SourceAgentDir $source -ProfileDir $rollbackProfile -PiPackageRoot $fakePackage -RiggingSkillsRoot '' -BackupConflicts } catch { $failed = $true }
     if (-not $failed) { throw 'Injected Junction failure did not stop publication' }
-} finally { Remove-Item -LiteralPath Function:\global:New-Item }
+} finally { Remove-Item -LiteralPath Function:\New-Item }
 if ((Get-Content -LiteralPath (Join-Path $rollbackProfile 'AGENTS.md') -Raw) -ne 'preserve existing instructions') { throw 'Rollback did not restore overwritten AGENTS.md' }
 if (Test-Path -LiteralPath (Join-Path $rollbackProfile 'skills/pi-workflow')) { throw 'Rollback left a created Junction' }
 if (-not (Test-Path -LiteralPath (Join-Path $repo 'pi/harness/skills/pi-workflow/SKILL.md'))) { throw 'Rollback touched a Junction target' }
 Write-Output "PASS: nested overlap, state/source reparse refusal, harness preview, isolation, auth/settings preservation, links, manifest integrity/no-op, idempotence, conflict backup, invalid-manifest refusal, and injected rollback. Fixture: $fixture"
+
+# Formal promotion puts the compact shim ahead of native pi on PATH.
+$nativeBin = Join-Path $fixture 'native-bin'
+$nativePackage = Join-Path $nativeBin 'node_modules/@earendil-works/pi-coding-agent'
+New-Item -ItemType Directory -Path $nativePackage -Force | Out-Null
+Set-Content -LiteralPath (Join-Path $nativeBin 'pi.cmd') -Value '@echo native fixture'
+Set-Content -LiteralPath (Join-Path $nativePackage 'package.json') -Value '{"name":"@earendil-works/pi-coding-agent","version":"0.85.1"}'
+$oldPath = $env:PATH
+try {
+    $env:PATH = (Join-Path $profile 'bin') + ';' + $nativeBin + ';' + $oldPath
+    $shadowProfile = Join-Path $fixture 'shadow-profile'
+    & $migration -SourceAgentDir $source -ProfileDir $shadowProfile -RiggingSkillsRoot ''
+    $harness = Get-Content -LiteralPath (Join-Path $shadowProfile 'harness.json') -Raw | ConvertFrom-Json
+    if ($harness.piPackageRoot -ne $nativePackage) { throw 'Compact shim shadowed native package discovery' }
+} finally { $env:PATH = $oldPath }
+'PASS: package discovery after compact shim PATH promotion'

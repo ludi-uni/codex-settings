@@ -3,6 +3,7 @@
 param(
     [string]$ProfileDir = (Join-Path $env:USERPROFILE '.pi/profiles/compact'),
     [string]$PiWebConfigDir = (Join-Path $env:USERPROFILE '.config/pi-web'),
+    [switch]$UserPath,
     [switch]$Disable
 )
 Set-StrictMode -Version Latest
@@ -19,6 +20,27 @@ foreach ($root in @($ProfileDir, $PiWebConfigDir)) {
 }
 $shim = Join-Path $ProfileDir 'bin/pi.cmd'
 if (-not (Test-Path -LiteralPath $shim -PathType Leaf)) { throw 'Migrate the compact profile first.' }
+$bin = Join-Path $ProfileDir 'bin'
+if ($UserPath) {
+    $beforePath = [Environment]::GetEnvironmentVariable('Path', 'User')
+    $parts = if ($beforePath) { @($beforePath.Split(';') | Where-Object { $_.TrimEnd('\') -ine $bin.TrimEnd('\') }) } else { @() }
+    $afterPath = if ($Disable) { $parts -join ';' } else { (@($bin) + $parts) -join ';' }
+    if ($afterPath -cne $beforePath) {
+        if (-not $PSCmdlet.ShouldProcess('Windows User PATH', $(if ($Disable) {'restore native pi lookup'} else {'select compact pi as the default command'}))) { return }
+        $stateDir = Join-Path $ProfileDir '.codex-harness'
+        $stateItem = Get-Item -LiteralPath $stateDir -Force
+        if ($stateItem.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked harness state directory refused.' }
+        $backup = Join-Path $stateDir ('user-path-backup-' + [guid]::NewGuid() + '.json')
+        @{ path = $beforePath } | ConvertTo-Json | Set-Content -LiteralPath $backup -Encoding utf8NoBOM
+        if ([Environment]::GetEnvironmentVariable('Path', 'User') -cne $beforePath) { throw 'User PATH changed concurrently; no change made.' }
+        [Environment]::SetEnvironmentVariable('Path', $afterPath, 'User')
+        Write-Output "PI_USER_HARNESS mode=$(if ($Disable) {'native'} else {'compact'}) backup=$backup"
+    } else { Write-Output 'PI_USER_HARNESS unchanged' }
+    if ($WhatIfPreference) { return }
+    $processParts = @($env:PATH.Split(';') | Where-Object { $_.TrimEnd('\') -ine $bin.TrimEnd('\') })
+    $env:PATH = if ($Disable) { $processParts -join ';' } else { (@($bin) + $processParts) -join ';' }
+    return
+}
 $envPath = Join-Path $PiWebConfigDir 'env'
 $item = Get-Item -LiteralPath $envPath -Force
 if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked pi-web env file refused.' }
@@ -26,7 +48,6 @@ $before = [IO.File]::ReadAllText($envPath)
 $pathMatches = [regex]::Matches($before, '(?m)^PATH=([^\r\n]*)')
 if ($pathMatches.Count -ne 1) { throw 'Expected exactly one PATH entry in the existing pi-web env file.' }
 if ($before -match '(?m)^PI_CODING_AGENT_DIR=') { throw 'Review pi-web agent-dir override before changing its launcher; session storage must remain stable.' }
-$bin = Join-Path $ProfileDir 'bin'
 $entries = @($pathMatches[0].Groups[1].Value.Split(';') | Where-Object { $_.TrimEnd('\') -ine $bin.TrimEnd('\') })
 $path = if ($Disable) { $entries -join ';' } else { (@($bin) + $entries) -join ';' }
 $match = $pathMatches[0]

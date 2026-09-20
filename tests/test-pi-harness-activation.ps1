@@ -8,6 +8,9 @@ New-Item -ItemType Directory -Path "$profile/bin",$web | Out-Null
 Set-Content "$profile/bin/pi.cmd" '@echo fixture'
 $original = "PI_WEB_TOKEN=fixture-not-a-secret`r`nPATH=C:\Windows;C:\Tools`r`nOTHER=preserve`r`n"
 [IO.File]::WriteAllText("$web/env", $original)
+$userPathBefore = [Environment]::GetEnvironmentVariable('Path', 'User')
+& $scriptPath -ProfileDir $profile -PiWebConfigDir $web -UserPath -WhatIf
+if ([Environment]::GetEnvironmentVariable('Path', 'User') -cne $userPathBefore) { throw 'User PATH preview wrote registry' }
 & $scriptPath -ProfileDir $profile -PiWebConfigDir $web -WhatIf
 if ([IO.File]::ReadAllText("$web/env") -cne $original) { throw 'Preview wrote env' }
 & $scriptPath -ProfileDir $profile -PiWebConfigDir $web

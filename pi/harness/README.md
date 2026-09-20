@@ -108,8 +108,21 @@ This changes only PATH in the existing pi-web startup env file, preserving its t
 and other settings, file ACL and session-storage configuration. The full env backup
 stays locally under `~/.config/pi-web/backup-harness-*`; it contains the existing
 token, so do not publish it. Restart pi-web afterward. `-Disable` restores native
-command lookup for the same profile and also requires a restart. Global Windows PATH
-and ordinary terminal `pi` command lookup are not modified.
+command lookup for the same profile and also requires a restart. By default, this
+activation changes only pi-web's command lookup.
+
+To make compact the normal Windows user command as well:
+
+```powershell
+.\scripts\activate-pi-harness.ps1 -UserPath -WhatIf
+.\scripts\activate-pi-harness.ps1 -UserPath
+```
+
+This prepends the profile shim to User PATH, preserves Machine PATH and backs up
+the original value under the profile's `.codex-harness/`. Restart existing terminal
+applications to inherit it. `-UserPath -Disable` removes only this profile entry;
+it retains other PATH changes. Package commands still forward to native pi. The
+native npm `pi.cmd` remains available by its absolute path for baseline sessions.
 
 ## pi-web integration boundary
 
