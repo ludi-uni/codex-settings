@@ -74,8 +74,8 @@ Do not require a plan file, reviewer, subagent or complete skill load for trivia
 
 - Route from task/symptom to a short workflow entry, then follow only relevant links.
 - Give each entry a clear trigger, inputs, procedure, exit condition and references.
-- Preserve one owner for each fact. Link existing visual/rigging knowledge in place;
-  keep related rigging directories together to preserve relative references.
+- Preserve one owner for each fact. Link existing domain knowledge in place;
+  keep related skill directories together to preserve relative references.
 - Start with native Skill discovery and ordinary file search. No vector database,
   background crawler, broad RAG service or automatic memory writer in version one.
 - Distinguish established knowledge from temporary hypotheses and current results.

@@ -8,8 +8,8 @@ param(
     [string]$Backend = 'whisperx',
     [string]$Device = 'cuda',
     [string]$OutputJson,
-    [string]$WhisperXVenvPath = 'C:\Users\leade\.cache\agent-verification-lab\whisperx-venv',
-    [string]$ModelCachePath = 'C:\Users\leade\.cache\agent-verification-lab\whisperx-models'
+    [string]$WhisperXVenvPath = (Join-Path $env:USERPROFILE '.cache/agent-verification-lab/whisperx-venv'),
+    [string]$ModelCachePath = (Join-Path $env:USERPROFILE '.cache/agent-verification-lab/whisperx-models')
 )
 
 Set-StrictMode -Version Latest

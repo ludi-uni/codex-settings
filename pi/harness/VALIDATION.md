@@ -6,8 +6,8 @@ Current native-layout migration and official CLI print/RPC tests pass. No fixed
 runtime version or custom update manager is active.
 
 Candidate: native Windows, installed pi 0.85.1, separate
-`C:/Users/leade/.pi/profiles/compact` profile. Baseline remains
-`C:/Users/leade/.pi/agent`. No commit/push or automatic pi-web promotion.
+`~/.pi/profiles/compact` profile. Baseline remains
+`~/.pi/agent`. No commit/push or automatic pi-web promotion.
 
 ## Contract checks
 

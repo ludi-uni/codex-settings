@@ -11,7 +11,7 @@ mkdirSync(agent);mkdirSync(project);
 writeFileSync(join(agent,'settings.json'),JSON.stringify({defaultProvider:'fixture',defaultModel:'fixture'}));
 writeFileSync(join(agent,'auth.json'),'{}');
 writeFileSync(join(project,'AGENTS.md'),'# Project\nPreserve the SENTINEL.');
-const migration=spawnSync('pwsh',['-NoProfile','-File',join(repo,'scripts/migrate-pi-harness.ps1'),'-AgentDir',agent,'-RiggingSkillsRoot','','-NoActivate'],{encoding:'utf8',timeout:30000});
+const migration=spawnSync('pwsh',['-NoProfile','-File',join(repo,'scripts/migrate-pi-harness.ps1'),'-AgentDir',agent,'-ExternalSkillsRoot','','-NoActivate'],{encoding:'utf8',timeout:30000});
 assert.equal(migration.status,0,migration.stdout+migration.stderr);
 const ext=join(root,'fixture.ts');
 writeFileSync(ext,`

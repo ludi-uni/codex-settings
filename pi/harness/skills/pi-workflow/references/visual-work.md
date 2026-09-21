@@ -1,7 +1,7 @@
 # Visual work
 
 Use this route when correctness depends on what a user can see: images, UI, 3D,
-animation, or video. Load the relevant linked visual or rigging guidance when
+animation, or video. Load the relevant linked visual or domain guidance when
 available. Establish the requested visual outcome and the source asset or runtime
 that produces it before editing.
 

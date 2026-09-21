@@ -4,7 +4,7 @@ param(
     [Alias('SourceAgentDir')][string]$AgentDir = (Join-Path $env:USERPROFILE '.pi/agent'),
     [string]$ProfileDir = (Join-Path $env:USERPROFILE '.pi/profiles/compact'),
     [string]$PiWebConfigDir = (Join-Path $env:USERPROFILE '.config/pi-web'),
-    [AllowEmptyString()][string]$RiggingSkillsRoot,
+    [AllowEmptyString()][string]$ExternalSkillsRoot,
     [switch]$NoActivate,
     [switch]$BackupConflicts
 )
@@ -31,7 +31,7 @@ $settings.enableInstallTelemetry = $false
 $updated = $settings | ConvertTo-Json -Depth 100
 # Installer handles managed AGENTS and directory conflicts; credentials are not touched.
 $installArgs = @{ AgentDir=$AgentDir; Compact=$true; BackupConflicts=$BackupConflicts }
-if ($PSBoundParameters.ContainsKey('RiggingSkillsRoot')) { $installArgs.RiggingSkillsRoot = $RiggingSkillsRoot }
+if ($PSBoundParameters.ContainsKey('ExternalSkillsRoot')) { $installArgs.ExternalSkillsRoot = $ExternalSkillsRoot }
 & "$PSScriptRoot/install-pi.ps1" @installArgs
 $beforeSemantic = ($original | ConvertFrom-Json -AsHashtable) | ConvertTo-Json -Depth 100 -Compress
 $afterSemantic = $settings | ConvertTo-Json -Depth 100 -Compress

@@ -16,7 +16,7 @@ guarantee of active capability. Never assume a fixed model or agent runtime.
 For a small, clear edit, act directly and run the focused check that demonstrates
 the requested result. For nontrivial code investigation, fixes, review, visual
 work, or research, load `pi-workflow` from its discovered absolute Skill path, then only the reference it
-routes to. Use linked visual or rigging skills when their task-specific guidance is
+routes to. Use linked domain skills when their task-specific guidance is
 needed. Do not require planning files, delegation, a reviewer, or broad test suites
 when the task does not warrant them.
 

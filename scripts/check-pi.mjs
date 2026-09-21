@@ -1,5 +1,5 @@
 // Read-only resource and real CLI/RPC startup check. Never sends an LLM prompt.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -11,7 +11,13 @@ const packageInfo = JSON.parse(readFileSync(join(pkg, 'package.json'), 'utf8'));
 const cli = join(pkg, typeof packageInfo.bin === 'string' ? packageInfo.bin : packageInfo.bin.pi);
 const state = JSON.parse(readFileSync(join(agentDir, 'codex-settings/pi.json'), 'utf8'));
 const expected = ['visual-verification', 'project-management'];
-if (state.links['skills/rigging']) expected.push('2d-rigging-knowledge', 'live2d-rigging-skill');
+for (const [relative, target] of Object.entries(state.links ?? {})) {
+  if (!relative.startsWith('skills/') || relative === 'skills/pi-workflow') continue;
+  if (expected.some(name => relative === `skills/${name}`)) continue;
+  for (const entry of readdirSync(target, { withFileTypes: true })) {
+    if (entry.isDirectory() && existsSync(join(target, entry.name, 'SKILL.md'))) expected.push(entry.name);
+  }
+}
 if (existsSync(join(agentDir, 'skills/pi-workflow/SKILL.md'))) expected.push('pi-workflow');
 const context = readFileSync(join(agentDir, 'AGENTS.md'), 'utf8');
 assert(context.includes('Progress rule'), 'Global AGENTS policy missing');

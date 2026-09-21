@@ -4,7 +4,7 @@ param(
     [string]$AgentDir,
     [string]$CodexHome,
     [switch]$Compact,
-    [AllowEmptyString()][string]$RiggingSkillsRoot,
+    [AllowEmptyString()][string]$ExternalSkillsRoot,
     [switch]$BackupConflicts
 )
 Set-StrictMode -Version Latest
@@ -15,12 +15,17 @@ if (-not $AgentDir) { $AgentDir = if ($env:PI_CODING_AGENT_DIR) { $env:PI_CODING
 if (-not $CodexHome) { $CodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE '.codex' } }
 $AgentDir = [IO.Path]::GetFullPath($AgentDir)
 $resources = Get-Content "$repo/shared/resources.json" -Raw | ConvertFrom-Json
-if (-not $PSBoundParameters.ContainsKey('RiggingSkillsRoot')) {
-    $RiggingSkillsRoot = [IO.Path]::GetFullPath((Join-Path $repo $resources.riggingSkillsRelativeRoot))
-    if (-not (Test-Path -LiteralPath $RiggingSkillsRoot)) {
-        Write-Warning 'Optional rigging checkout not found; use -RiggingSkillsRoot to add it.'
-        $RiggingSkillsRoot = ''
+$externalGroups = [ordered]@{}
+if ($resources.externalSkillGroups) {
+    foreach ($property in $resources.externalSkillGroups.PSObject.Properties) {
+        $externalGroups[$property.Name] = $property.Value
     }
+}
+if ($PSBoundParameters.ContainsKey('ExternalSkillsRoot') -and $ExternalSkillsRoot) {
+    if ($externalGroups.Count -gt 0) { throw 'externalSkillGroups already configured; edit shared/resources.json instead of passing -ExternalSkillsRoot.' }
+    $ExternalSkillsRoot = [IO.Path]::GetFullPath($ExternalSkillsRoot)
+    if (-not (Test-Path -LiteralPath $ExternalSkillsRoot -PathType Container)) { throw "External skills root not found: $ExternalSkillsRoot" }
+    $externalGroups['external'] = $ExternalSkillsRoot
 }
 function Assert-PlainParents([string]$Path) {
     $cursor = [IO.Path]::GetFullPath($Path)
@@ -55,13 +60,16 @@ foreach ($name in $resources.skills) {
     if (-not (Test-Path -LiteralPath "$source/SKILL.md" -PathType Leaf)) { throw "Missing skill: $source" }
     $links["skills/$name"] = $source
 }
-if ($RiggingSkillsRoot) {
-    $RiggingSkillsRoot = (Get-Item -LiteralPath $RiggingSkillsRoot).FullName
-    foreach ($name in @('2d-rigging-knowledge', 'live2d-rigging-skill')) {
-        if (-not (Test-Path -LiteralPath "$RiggingSkillsRoot/$name/SKILL.md" -PathType Leaf)) { throw "Missing rigging skill: $name" }
-    }
+foreach ($groupName in $externalGroups.Keys) {
+    if ($groupName -notmatch '^[a-z0-9-]+$') { throw "Invalid external skill group name: $groupName" }
+    $configured = [string]$externalGroups[$groupName]
+    $groupPath = if ([IO.Path]::IsPathRooted($configured)) { [IO.Path]::GetFullPath($configured) } else { [IO.Path]::GetFullPath((Join-Path $repo $configured)) }
+    if (-not (Test-Path -LiteralPath $groupPath -PathType Container)) { throw "External skill group not found: $groupPath" }
+    $groupPath = (Get-Item -LiteralPath $groupPath).FullName
+    $skillCount = @(Get-ChildItem -LiteralPath $groupPath -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') -PathType Leaf }).Count
+    if ($skillCount -eq 0) { throw "External skill group has no skills: $groupPath" }
     # Link the grouping directory, preserving all sibling knowledge references.
-    $links['skills/rigging'] = $RiggingSkillsRoot
+    $links["skills/$groupName"] = $groupPath
 }
 $links['agents'] = Join-Path $repo 'pi/agents'
 $links['extensions/codex-settings'] = Join-Path $repo 'pi/extensions'

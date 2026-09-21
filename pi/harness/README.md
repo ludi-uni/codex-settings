@@ -26,7 +26,7 @@ terminal applications and pi-web after the first migration. Both then invoke off
 | --- | --- |
 | `~/.pi/agent/AGENTS.md` | Generated from `pi/harness/AGENTS.md` and `shared/loop-prevention.md` |
 | `~/.pi/agent/skills/pi-workflow/` | Junction to this repository's short workflow entry and references |
-| Shared visual/rigging skills | Existing Junctions, preserving sibling references |
+| Shared visual/project skills | Existing Junctions, preserving sibling references |
 | `~/.pi/agent/extensions/codex-settings/` | Existing small loop guard through the public Extension API |
 | `settings.json`, `models.json`, `auth.json`, `sessions/` | Normal pi ownership; credentials are never copied to the repository |
 

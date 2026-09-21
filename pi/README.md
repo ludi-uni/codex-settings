@@ -17,7 +17,7 @@ model changes or authentication changes are required.
 ```
 
 Restart `pi` or use `/reload` after source changes. Skills can be invoked as
-`/skill:visual-verification`, `/skill:2d-rigging-knowledge`, etc.
+`/skill:visual-verification`, `/skill:project-management`, etc.
 
 ## Actual installation
 
@@ -30,7 +30,7 @@ Restart `pi` or use `/reload` after source changes. Skills can be invoked as
   extensions/codex-settings/     Junction -> repo/pi/extensions (all-model loop guard)
   skills/visual-verification/    Junction -> repo/skills/visual-verification
   skills/project-management/     Junction -> repo/skills/project-management
-  skills/rigging/                Junction -> existing project .agents/skills
+  skills/<external-group>/       optional Junctions -> declared external skill dirs
   codex-settings/pi.json         generated ownership/hash/source record
   codex-settings/install.lock    exclusive installer lock
   codex-settings/backup-*/       retained replaced entries when needed
@@ -51,9 +51,10 @@ is implemented by this guard.
 
 The default agent directory honors `PI_CODING_AGENT_DIR`, otherwise
 `$env:USERPROFILE/.pi/agent`. `-AgentDir`, `-CodexHome` (also honors `CODEX_HOME`),
-and `-RiggingSkillsRoot` support explicit paths. The default rigging path is an
-optional sibling checkout recorded in `shared/resources.json`; explicit missing
-paths fail. Absent optional sources are reported rather than created or fetched.
+and `-ExternalSkillsRoot` support explicit paths. Optional external skill groups
+are declared in `shared/resources.json` under `externalSkillGroups`; explicit
+missing paths fail. Absent optional sources are reported rather than created or
+fetched.
 
 The installer checks every source and destination conflict before publishing links.
 Existing correct Junctions and unchanged generated content are no-ops. Unknown or

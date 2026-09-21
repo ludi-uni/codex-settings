@@ -1,5 +1,11 @@
 # codex-settings
 
+A reusable settings and skill-management base for AI coding agents on native
+Windows. It installs a controlled set of Codex Skills and a pi (pi-coding-agent)
+harness — shared instructions, skills, and a small loop-guard extension — via
+Junctions and hash-verified copies, keeping credentials and mutable user config
+outside the repository.
+
 Native Windows **pi sharing** is now available alongside the existing Codex installer:
 run `.\scripts\install-pi.ps1`, then `.\scripts\check-pi.ps1`.
 See [pi setup and verification](pi/README.md), [shared ownership](shared/README.md),
@@ -47,47 +53,23 @@ this `$project-management` workflow for this ownership contract; do not run both
 workflows for one milestone. If a session only exposes Asana to a coordinator, this
 Skill reports unavailable synchronization instead of bypassing role permissions.
 
-## Source and initial audit (2026-09-09)
+## Provenance
 
-- Source: local operational `D:\Develop\agent-verification-lab\skills\visual-verification`.
-- Upstream: private `ludi-uni/agent-verification-lab`, commit
-  `dc7017b285d65b2e992b9e6da5dd2eb6e127da46`, Skill tree
-  `84bed55062b25ff048e1aca386dd07eb3b6e8755`.
-- The active `~/.codex/skills/visual-verification` was a Junction to that directory.
-  Local master and GitHub master/HEAD matched. The canonical checkout and phase1
-  worktree were clean, including untracked-file checks. The ignored `work/` acceptance
-  report and `.worktrees/` remain in the original repository and are not imported.
-- All 13 Skill files are adopted without code or instruction changes. Existing
-  capture safeguards, numeric formatting and Unicode fixes are retained.
-- The original repository is neither renamed, modified nor removed. This repository
-  owns future published Skill snapshots; its updates do not flow back to the lab.
-
-## WinApp desktop backend resync (2026-09-12)
-
-- Accepted implementation source: `D:\0_my_folder\agent-verification-lab\skills\visual-verification`,
-  commit `b466f3152cc274f01fec63013b0baada0608e0c2`, Skill tree
-  `c646a05fbcb36759420c51b0423d22332163b499`.
-- `agent-verification-lab` remains the implementation source. This repository keeps
-  the existing vendored snapshot and remains the Codex installation/distribution owner;
-  `update.ps1` publishes an independent managed copy to the global Codex Skill directory.
-- The accepted 18-file snapshot adds the WinApp CLI `0.6.1` desktop discovery,
-  screenshot, record/frames and optional inspect adapters. The 12 pre-existing shared
-  payload files remain byte-identical; `SKILL.md` adds only the accepted desktop contract.
-- On the next install/update, a recognized legacy lab Junction manifest is moved to a
-  recoverable `codex-settings/legacy-manifest-visual-verification-*.json` backup. Current
-  installation state is owned by each Skill's `.codex-settings.json` marker and a normal
-  directory is the expected filesystem form after adoption by this repository.
-
-The Skill retains `%TEMP%\agent-verification-lab` evidence paths and existing JSON
-schema names for compatibility. Optional speech scripts retain the existing
-`C:\Users\leade\.cache\agent-verification-lab` defaults; on another machine pass
-`-WhisperXVenvPath` and `-ModelCachePath`. WhisperX/models are not installed by these
-scripts. An unavailable backend remains `REQUIRES_BACKEND`, not successful speech
-verification. FFmpeg and FFprobe must be on PATH for media operations.
+All content in this repository is authored by the repository owner. The
+`visual-verification` Skill was originally developed in a separate private project
+by the same author and is vendored here unchanged; this repository is now its
+installation and distribution owner. The legacy `agent-verification-lab` name is
+retained only in JSON schema identifiers and the default evidence/cache paths
+(`%TEMP%\agent-verification-lab`, `$env:USERPROFILE\.cache\agent-verification-lab`)
+for compatibility with previously installed copies. On another machine pass
+`-WhisperXVenvPath` and `-ModelCachePath` to the optional speech script.
+WhisperX/models are not installed by these scripts. An unavailable backend remains
+`REQUIRES_BACKEND`, not successful speech verification. FFmpeg and FFprobe must be
+on PATH for media operations.
 
 ## Usage
 
-Requires Windows, PowerShell 7 and Git. Clone the private repository using your
+Requires Windows, PowerShell 7 and Git. Clone this repository using your
 existing GitHub authentication; never put credentials in a clone URL or this repo.
 
 ```powershell
@@ -180,3 +162,27 @@ Skill is invalid or locally edited, and rollback after an injected second-/third
 publication failure. Fixtures are retained in TEMP for inspection. Actual image inspection
 remains required when claiming visual behavior; installation/hash checks alone do
 not establish capture, A/V or speech quality.
+
+## External skills (optional)
+
+The pi installer can link additional skill directories that live outside this
+repository — for example private or work-in-progress skills — without copying
+them. Declare groups in `shared/resources.json`:
+
+```json
+"externalSkillGroups": {
+  "my-group": "../path/to/skills-directory"
+}
+```
+
+Each group is a directory whose subdirectories each contain a `SKILL.md`. The
+installer links the whole group as `~/.pi/agent/skills/<group-name>`, preserving
+sibling references between skills. The default empty map installs nothing and
+emits no warnings. For a one-off link without editing the manifest, run
+`scripts/install-pi.ps1 -ExternalSkillsRoot 'C:\path\to\skills'`; it is linked
+as `skills/external`. Removing a manifest entry never deletes an installed link
+automatically — back it up and remove it explicitly after review.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -1,5 +1,5 @@
 {
   "skills": ["visual-verification", "project-management"],
-  "riggingSkillsRelativeRoot": "../2.2.Cast2D_Parametric_Sprite/.agents/skills",
+  "externalSkillGroups": {},
   "commonPolicyEndHeading": "## Multi-agent routing"
 }
