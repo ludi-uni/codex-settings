@@ -13,12 +13,14 @@ requires it. Discover available tools, providers, and runtime support before
 claiming or relying on them; settings and installed packages are evidence, not a
 guarantee of active capability. Never assume a fixed model or agent runtime.
 
-For a small, clear edit, act directly and run the focused check that demonstrates
-the requested result. For nontrivial code investigation, fixes, review, visual
-work, or research, load `pi-workflow` from its discovered absolute Skill path, then only the reference it
-routes to. Use linked domain skills when their task-specific guidance is
-needed. Do not require planning files, delegation, a reviewer, or broad test suites
-when the task does not warrant them.
+The parent is the orchestrator: it owns scope, integration, decisions, final
+acceptance, and the work that cannot be delegated. Delegate delegatable work to
+child subagents rather than doing it in the parent. For nontrivial code
+investigation, fixes, review, visual work, or research, load `pi-workflow` from
+its discovered absolute Skill path, then only the reference it routes to. Use
+linked domain skills when their task-specific guidance is needed. Do not require
+planning files, a reviewer, or broad test suites when the task does not warrant
+them.
 
 Keep one current objective, acceptance condition, and next evidence-producing
 action. After each result, update the hypothesis or next action. If repeated work
